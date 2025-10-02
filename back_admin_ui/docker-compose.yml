@@ -1,0 +1,71 @@
+services:
+  backend:
+    image: hackathon-image:latest
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    #    env_file:
+    #      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      TRANSCRIBE_URL: ${TRANSCRIBE_URL}
+      DEBUG_MODE: ${DEBUG_MODE}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      SQLALCHEMY_DATABASE_URL: ${SQLALCHEMY_DATABASE_URL}
+      TRANSCRIBE_URL2: ${TRANSCRIBE_URL2}
+    networks:
+      - hack-network
+  streamlit-admin:
+    image: hackathon-image-streamlit:latest
+    environment:
+      PYTHONPATH: /app
+      API_BASE_URL: http://mos_task_3-backend-1:8000
+      STREAMLIT_SERVER_HEADLESS: "true"
+      STREAMLIT_SERVER_ADDRESS: "0.0.0.0"
+      STREAMLIT_SERVER_PORT: "8501"
+      STREAMLIT_LOGGER_LEVEL: "debug"
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
+    command: >
+      streamlit run admin_panel.py
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "8501:8501"
+    networks:
+      - hack-network
+    restart: unless-stopped
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    #    env_file:
+    #      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hack-network
+
+networks:
+  hack-network:
+    external: true
+
+volumes:
+  postgres_data:

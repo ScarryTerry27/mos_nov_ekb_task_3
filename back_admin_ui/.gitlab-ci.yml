@@ -1,0 +1,24 @@
+stages:
+  - build
+  - deploy
+
+build-job-prod:
+  stage: build
+  tags:
+    - runner_for_hackathon
+  script:
+    - docker build -t hackathon-image .
+    - docker build -t hackathon-image-streamlit ./admin_ui
+  only:
+    - main
+  when: manual
+
+deploy-job-prod:
+  stage: deploy
+  tags:
+    - runner_for_hackathon
+  script:
+    - docker-compose up -d
+  only:
+    - main
+  when: manual

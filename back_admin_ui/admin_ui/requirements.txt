@@ -1,0 +1,4 @@
+python-dotenv
+pydantic
+httpx==0.28
+streamlit==1.39.0
